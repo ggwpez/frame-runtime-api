@@ -1,5 +1,6 @@
 mod execute;
 mod decode;
+mod metadata;
 
 use anyhow::Result;
 use camino::Utf8PathBuf;
@@ -19,6 +20,7 @@ pub struct Command {
 pub enum Sub {
     Execute(execute::ExecuteCmd),
     Decode(decode::DecodeCmd),
+    Metadata(metadata::MetadataCmd),
 }
 
 #[derive(Debug, Parser)]
@@ -32,6 +34,7 @@ impl Command {
         match &self.sub {
             Sub::Execute(cmd) => cmd.run(&self.config),
             Sub::Decode(cmd) => cmd.run(&self.config),
+            Sub::Metadata(cmd) => cmd.run(&self.config),
         }
     }
 }

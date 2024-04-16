@@ -12,7 +12,9 @@ use std::borrow::Cow;
 use scale::Decode;
 use core::fmt::Debug;
 use frame_metadata::RuntimeMetadataPrefixed;
+use frame_metadata::RuntimeMetadata;
 
+/// Call a runtime API.
 #[derive(Debug, Clone, Parser)]
 pub struct ExecuteCmd {
     #[clap(index = 1, required = true)]
@@ -58,7 +60,6 @@ pub fn call_api(runtime: &Utf8PathBuf, api: &str, call: &str) -> Result<Vec<u8>>
 		.build();
 
 	let method = format!("{}_{}", api, call);
-	eprintln!("Calling: {}", method);
 
 	let (res, used_native) = exe.call(
 		&mut ext,
@@ -76,7 +77,6 @@ pub fn call_api(runtime: &Utf8PathBuf, api: &str, call: &str) -> Result<Vec<u8>>
 }
 
 fn print_result<T: Decode + Debug>(data: Vec<u8>) -> Result<()> {
-	eprintln!("Detected type: {:?}", std::any::type_name::<T>());
 	let data = T::decode(&mut &data[..])?;
 	println!("{:?}", data);
 	Ok(())
@@ -86,7 +86,6 @@ pub fn decode_metadata(data: Vec<u8>) -> Result<RuntimeMetadataPrefixed> {
 	let meta = frame_metadata::OpaqueMetadata::decode(&mut &data[..])?.0;
 
 	if let Ok(v) = RuntimeMetadataPrefixed::decode(&mut &meta[..]) {
-		eprintln!("Detected type: RuntimeMetadataPrefixed");
 		return Ok(v);
 	}
 
@@ -95,7 +94,6 @@ pub fn decode_metadata(data: Vec<u8>) -> Result<RuntimeMetadataPrefixed> {
 
 fn print_metadata(data: Vec<u8>) -> Result<()> {
 	if let Ok(v) = decode_metadata(data) {
-		eprintln!("Detected type: RuntimeMetadataPrefixed");
 		println!("{:#?}", v);
 		return Ok(());
 	}
@@ -115,20 +113,17 @@ fn print_best_effort(data: Vec<u8>) -> Result<()> {
 		};
 
 		if let Ok(data) = serde_json::from_str::<serde_json::Value>(&data) {
-			eprintln!("Detected type: JSON");
 			println!("{}", serde_json::to_string_pretty(&data)?);
 			return Ok(());
 		};
 	}
 
-	eprintln!("Could not detect type; printing as Hex");
 	println!("0x{}", hex::encode(data));
 	Ok(())
 }
 
 fn print_result_non_string(data: Vec<u8>) -> Result<()> {
 	if let Ok(data) = Vec::<String>::decode(&mut &data[..]) {
-		eprintln!("Detected type: Vec<&str>");
 		println!("{:#?}", data);
 		return Ok(());
 	}
@@ -143,4 +138,10 @@ fn extract_wasm(runtime: &Utf8PathBuf) -> Result<(WrappedRuntimeCode<'static>, V
 	let wrapped_code = WrappedRuntimeCode(Cow::Owned(code));
 
 	Ok((wrapped_code, hash))
+}
+
+pub fn get_metadata(runtime: &Utf8PathBuf) -> Result<RuntimeMetadata> {
+	let raw_meta = call_api(runtime, METADATA, metadata::METADATA)?;
+	let meta = decode_metadata(raw_meta)?;
+	Ok(meta.1)
 }
