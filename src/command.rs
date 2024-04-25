@@ -1,5 +1,5 @@
-mod execute;
 mod decode;
+mod call;
 mod metadata;
 
 use anyhow::Result;
@@ -18,7 +18,7 @@ pub struct Command {
 
 #[derive(Debug, Clone, Subcommand)]
 pub enum Sub {
-    Execute(execute::ExecuteCmd),
+    Call(call::CallCmd),
     Decode(decode::DecodeCmd),
     Metadata(metadata::MetadataCmd),
 }
@@ -32,7 +32,7 @@ pub struct Config {
 impl Command {
     pub fn run(&self) -> Result<()> {
         match &self.sub {
-            Sub::Execute(cmd) => cmd.run(&self.config),
+            Sub::Call(cmd) => cmd.run(&self.config),
             Sub::Decode(cmd) => cmd.run(&self.config),
             Sub::Metadata(cmd) => cmd.run(&self.config),
         }
