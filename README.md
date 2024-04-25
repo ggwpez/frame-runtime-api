@@ -12,16 +12,16 @@ Some example calls:
 frame-runtime-api -r polkadot_runtime-v1002000.compact.compressed.wasm call Metadata metadata
 
 # Get the versions
-frame-runtime-api -r ~/Downloads/polkadot_runtime-v1002000.compact.compressed.wasm call Core version
+frame-runtime-api -r .. call Core version
 ```
 
 Listing and finding metadata types:
 ```bash
 # List all types
-frame-runtime-api -r polkadot_runtime-v1002000.compact.compressed.wasm metadata list types
+frame-runtime-api -r .. metadata list types
 
 # Find a specific type (case-insensitive)
-frame-runtime-api -r polkadot_runtime-v1002000.compact.compressed.wasm metadata find type runtimeversion
+frame-runtime-api -r .. metadata find type runtimeversion
 > sp_version::RuntimeVersion
 ```
 
