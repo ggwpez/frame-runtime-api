@@ -3,8 +3,10 @@ use anyhow::Result;
 use camino::Utf8PathBuf;
 use clap::{Parser, Subcommand};
 use frame_metadata::RuntimeMetadata;
-use scale_info::PortableRegistry;
+use scale_info::{form::PortableForm, PortableRegistry};
 use std::collections::BTreeSet;
+use scale_info::TypeDefVariant;
+use scale_info::TypeDef;
 
 /// List metadata information.
 #[derive(Debug, Clone, Parser)]
@@ -94,11 +96,11 @@ impl FindCmd {
         let reg = extract_registry(&cfg.runtime)?;
         let pattern = self.value.to_lowercase();
 
-        let mut found = BTreeSet::new();
+        let mut found = Vec::new();
         for t in reg.types.iter() {
             let s = t.ty.path.to_string();
             if s.to_lowercase().contains(&pattern) {
-                found.insert(s);
+                found.push(t);
             }
         }
 
@@ -106,8 +108,16 @@ impl FindCmd {
             return Err(anyhow::anyhow!("Type not found in metadata"));
         }
 
-        for s in found.iter() {
-            println!("{s}");
+        found.sort_by_key(|t| &t.ty.path);
+
+        for t in found.iter() {
+            let generics = t.ty.type_params.iter().map(|p| p.name.to_string()).collect::<Vec<_>>().join(", ");
+            let generics = if generics.is_empty() {
+                "".to_string()
+            } else {
+                format!("::<{}>", generics)
+            };
+            println!("{}{}\n{:#?}", t.ty.path, generics, t.ty.type_def);
         }
 
         if found.len() > 1 {

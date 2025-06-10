@@ -36,7 +36,7 @@ impl DecodeCmd {
             .find(|t| t.ty.path.to_string().ends_with(&self.as_typ))
             .ok_or_else(|| anyhow::anyhow!("Type not found in metadata"))?;
 
-        let v = Value::decode_as_type(&mut &data[..], &t.id, &registry)?;
+        let v = Value::decode_as_type(&mut &data[..], t.id, &registry)?;
         let json = serde_json::to_string_pretty(&v)?;
         println!("{}", json);
 
