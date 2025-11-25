@@ -12,6 +12,7 @@ clap = { version = "4.5.40", features = ["derive"] }
 frame-metadata = "23.0.0"
 hex = "0.4.3"
 log = "0.4.27"
+regex = "1.12.2"
 sc-executor = { version = "0.42.0", default-features = false, features = ["std"] }
 scale = { version = "3.7.5", package = "parity-scale-codec" }
 scale-decode = "0.16.0"

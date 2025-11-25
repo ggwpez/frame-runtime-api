@@ -3,10 +3,11 @@ use anyhow::Result;
 use camino::Utf8PathBuf;
 use clap::{Parser, Subcommand};
 use frame_metadata::RuntimeMetadata;
-use scale_info::{form::PortableForm, PortableRegistry};
+use regex::Regex;
+use scale_info::PortableRegistry;
+use serde_json;
 use std::collections::BTreeSet;
-use scale_info::TypeDefVariant;
-use scale_info::TypeDef;
+use std::fs;
 
 /// List metadata information.
 #[derive(Debug, Clone, Parser)]
@@ -17,34 +18,34 @@ pub struct MetadataCmd {
 
 #[derive(Debug, Clone, Subcommand)]
 pub enum MetadataSub {
-    /// List somthing in the metadata.
-    List(ListCmd),
-    /// Find something in the metadata.
-    Find(FindCmd),
+    /// Show types in the metadata.
+    Show(ShowCmd),
+    /// Write metadata to JSON file.
+    WriteJson(WriteJsonCmd),
 }
 
-/// List something.
+/// Show types in the metadata.
 #[derive(Debug, Clone, Parser)]
-pub struct ListCmd {
-    /// What to list.
+pub struct ShowCmd {
+    /// What to show.
     #[clap(value_enum, index = 1)]
     pub what: What,
 
-    /// Skip empty types.
-    #[clap(long, default_value = "true")]
-    pub skip_empty: Option<bool>,
-}
-
-/// List something.
-#[derive(Debug, Clone, Parser)]
-pub struct FindCmd {
-    /// What to find.
-    #[clap(value_enum, index = 1)]
-    pub what: What,
-
-    /// The runtime metadata type to find.
+    /// Optional regex pattern to filter types (case-sensitive).
     #[clap(index = 2)]
-    pub value: String,
+    pub pattern: Option<String>,
+
+    /// Show detailed information about the types.
+    #[clap(short, long)]
+    pub details: bool,
+}
+
+/// Write metadata to JSON file.
+#[derive(Debug, Clone, Parser)]
+pub struct WriteJsonCmd {
+    /// Output JSON file path.
+    #[clap(index = 1)]
+    pub output: Utf8PathBuf,
 }
 
 #[derive(Debug, Clone, PartialEq, clap::ValueEnum)]
@@ -57,73 +58,70 @@ pub enum What {
 impl MetadataCmd {
     pub fn run(&self, cfg: &Config) -> Result<()> {
         match &self.sub {
-            MetadataSub::List(cmd) => cmd.run(cfg),
-            MetadataSub::Find(cmd) => cmd.run(cfg),
+            MetadataSub::Show(cmd) => cmd.run(cfg),
+            MetadataSub::WriteJson(cmd) => cmd.run(cfg),
         }
     }
 }
 
-impl ListCmd {
+impl ShowCmd {
     pub fn run(&self, cfg: &Config) -> Result<()> {
         match self.what {
             What::Types => (), // static assert
         };
         let reg = extract_registry(&cfg.runtime)?;
 
-        let mut found = BTreeSet::new();
-        for t in reg.types.iter() {
-            let s = t.ty.path.to_string();
-            if self.skip_empty.unwrap_or(true) && s.is_empty() {
-                continue;
-            }
+        // Filter types by pattern, if provided
+        let matching_types: Vec<_> = if let Some(pattern) = &self.pattern {
+            let regex = Regex::new(pattern)?;
+            reg.types
+                .iter()
+                .filter(|t| regex.is_match(&t.ty.path.to_string()))
+                .collect()
+        } else {
+            reg.types.iter().collect()
+        };
 
-            found.insert(s);
+        if matching_types.is_empty() {
+            return Err(anyhow::anyhow!("No types found matching the pattern"));
         }
 
-        for t in found.iter() {
-            println!("{}", t);
+        // Collect unique type names and sort
+        let mut type_names = BTreeSet::new();
+        for t in &matching_types {
+            type_names.insert(t.ty.path.to_string());
+        }
+
+        // Print type names
+        for name in &type_names {
+            println!("{}", name);
+
+            if self.details {
+                // Find and print details for all types with this name
+                let mut types_with_name: Vec<_> = matching_types
+                    .iter()
+                    .filter(|t| t.ty.path.to_string() == *name)
+                    .collect();
+                types_with_name.sort_by_key(|t| t.id);
+
+                for t in types_with_name {
+                    println!("{:#?}", t.ty.type_def);
+                }
+            }
         }
 
         Ok(())
     }
 }
 
-impl FindCmd {
+impl WriteJsonCmd {
     pub fn run(&self, cfg: &Config) -> Result<()> {
-        match self.what {
-            What::Types => (), // static assert
-        };
         let reg = extract_registry(&cfg.runtime)?;
-        let pattern = self.value.to_lowercase();
 
-        let mut found = Vec::new();
-        for t in reg.types.iter() {
-            let s = t.ty.path.to_string();
-            if s.to_lowercase().contains(&pattern) {
-                found.push(t);
-            }
-        }
+        let json = serde_json::to_string_pretty(&reg)?;
+        fs::write(&self.output, json)?;
 
-        if found.is_empty() {
-            return Err(anyhow::anyhow!("Type not found in metadata"));
-        }
-
-        found.sort_by_key(|t| &t.ty.path);
-
-        for t in found.iter() {
-            let generics = t.ty.type_params.iter().map(|p| p.name.to_string()).collect::<Vec<_>>().join(", ");
-            let generics = if generics.is_empty() {
-                "".to_string()
-            } else {
-                format!("::<{}>", generics)
-            };
-            println!("{}{}\n{:#?}", t.ty.path, generics, t.ty.type_def);
-        }
-
-        if found.len() > 1 {
-            return Err(anyhow::anyhow!("Multiple types found in metadata"));
-        }
-
+        println!("Metadata written to {}", self.output);
         Ok(())
     }
 }

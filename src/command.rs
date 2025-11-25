@@ -1,5 +1,5 @@
-mod decode;
 mod call;
+mod decode;
 mod metadata;
 
 use anyhow::Result;
