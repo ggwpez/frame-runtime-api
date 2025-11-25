@@ -18,10 +18,10 @@ frame-runtime-api -r .. call Core version
 Listing and finding metadata types:
 ```bash
 # List all types
-frame-runtime-api -r .. metadata list types
+frame-runtime-api -r .. metadata show types
 
-# Find a specific type (case-insensitive)
-frame-runtime-api -r .. metadata find type runtimeversion
+# Show all pallet calls
+frame-runtime-api -r .. metadata show types ".*::pallet::Call"
 > sp_version::RuntimeVersion
 ```
 
