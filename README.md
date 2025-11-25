@@ -1,6 +1,12 @@
 # Frame Runtime API CLI
 
-Call into WASM Runtime API for debugging purposes.
+Call into WASM Runtime API and list types in the metadata for debugging purposes.
+
+Install with:
+
+```bash
+cargo install frame-runtime-api --locked
+```
 
 ## Example
 
