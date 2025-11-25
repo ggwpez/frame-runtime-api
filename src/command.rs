@@ -53,10 +53,10 @@ impl Config {
         }
 
         match wasm_files.len() {
-            0 => bail!("No .wasm file found in current directory. Please specify one with -r/--runtime"),
-            1 => {
-                Ok(Utf8PathBuf::from(&wasm_files[0]))
-            },
+            0 => bail!(
+                "No .wasm file found in current directory. Please specify one with -r/--runtime"
+            ),
+            1 => Ok(Utf8PathBuf::from(&wasm_files[0])),
             _ => {
                 bail!("Multiple .wasm files found in current directory: {:?}. Please specify one with -r/--runtime", wasm_files)
             }
