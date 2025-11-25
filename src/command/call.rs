@@ -56,7 +56,8 @@ impl CallCmd {
             (_, Some(arg)) => hex::decode(arg.trim_start_matches("0x").trim())?,
             _ => vec![],
         };
-        let res = call_api(&cfg.runtime, &self.api, &self.call, arg)?;
+        let runtime = cfg.get_runtime()?;
+        let res = call_api(&runtime, &self.api, &self.call, arg)?;
 
         if self.hex {
             println!("0x{}", hex::encode(res));

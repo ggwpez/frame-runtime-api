@@ -69,7 +69,8 @@ impl ShowCmd {
         match self.what {
             What::Types => (), // static assert
         };
-        let reg = extract_registry(&cfg.runtime)?;
+        let runtime = cfg.get_runtime()?;
+        let reg = extract_registry(&runtime)?;
 
         // Filter types by pattern, if provided
         let matching_types: Vec<_> = if let Some(pattern) = &self.pattern {
@@ -116,7 +117,8 @@ impl ShowCmd {
 
 impl WriteJsonCmd {
     pub fn run(&self, cfg: &Config) -> Result<()> {
-        let reg = extract_registry(&cfg.runtime)?;
+        let runtime = cfg.get_runtime()?;
+        let reg = extract_registry(&runtime)?;
 
         let json = serde_json::to_string_pretty(&reg)?;
         fs::write(&self.output, json)?;

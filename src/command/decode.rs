@@ -22,7 +22,8 @@ impl DecodeCmd {
     pub fn run(&self, cfg: &Config) -> Result<()> {
         self.check_args()?;
         let data = hex::decode(&self.data.trim_start_matches("0x"))?;
-        let metadata = get_metadata(&cfg.runtime)?;
+        let runtime = cfg.get_runtime()?;
+        let metadata = get_metadata(&runtime)?;
 
         let registry = match metadata {
             RuntimeMetadata::V14(v) => v.types,
