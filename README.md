@@ -19,19 +19,19 @@ Listing and finding metadata types:
 ```bash
 # List all types
 frame-runtime-api -r .. metadata show types
->cumulus_pallet_parachain_system::pallet::Call
-> cumulus_pallet_xcm::pallet::Call
-...
-> xcm::v5::traits::Error
-> xcm_runtime_apis::authorized_aliases::OriginAliaser
+# > cumulus_pallet_parachain_system::pallet::Call
+# > cumulus_pallet_xcm::pallet::Call
+# ...
+# > xcm::v5::traits::Error
+# > xcm_runtime_apis::authorized_aliases::OriginAliaser
 
 # Show all pallet calls
 frame-runtime-api -r .. metadata show types ".*::pallet::Call"
-> cumulus_pallet_parachain_system::pallet::Call
-> cumulus_pallet_xcm::pallet::Call
-...
-> snowbridge_pallet_system_frontend::pallet::Call
-> staging_parachain_info::pallet::Call
+# > cumulus_pallet_parachain_system::pallet::Call
+# > cumulus_pallet_xcm::pallet::Call
+# ...
+# > snowbridge_pallet_system_frontend::pallet::Call
+# > staging_parachain_info::pallet::Call
 ```
 
 If no runtime with `-r` is provided, it will try to find a `.wasm.` file in the current folder and
